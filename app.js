@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, deleteDoc, updateDoc, addDoc,
-  getDoc, onSnapshot, query, where, arrayUnion, arrayRemove, deleteField, writeBatch }
+  getDoc, onSnapshot, query, where, arrayUnion, arrayRemove, deleteField }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -410,11 +410,21 @@ async function backfillVotes(gid){
   const vm = groupVotes.get(gid) || new Map(), todo = [];
   mySwipes.forEach((s, id) => { if ((vm.get(id) || {})[me.uid] !== s.v) todo.push([id, s.v]); });
   vm.forEach((vs, id) => { if (vs && vs[me.uid] && !mySwipes.has(id)) todo.push([id, null]); });
-  for (let i = 0; i < todo.length; i += 400){
-    const b = writeBatch(db);
-    todo.slice(i, i + 400).forEach(([id, v]) => b.set(doc(db, "groups", gid, "votes", id), {[me.uid]: v === null ? deleteField() : v}, {merge: true}));
-    try { await b.commit(); } catch (err) { console.error(err); backfilled.delete(gid); return; }
-  }
+  const res = await writeMany(todo.map(([id, v]) => () => setDoc(doc(db, "groups", gid, "votes", id), {[me.uid]: v === null ? deleteField() : v}, {merge: true})));
+  if (res.failed){ backfilled.delete(gid); console.error("vote backfill", res); }
+}
+// Run many single-document writes with limited parallelism; report failures instead of throwing.
+async function writeMany(tasks, onDone){
+  let failed = 0, code = "";
+  const q = [...tasks];
+  await Promise.all(Array.from({length: 8}, async () => {
+    while (q.length){
+      const t = q.shift();
+      try { await t(); } catch (err) { failed++; code = err.code || err.message || "fout"; console.error(err); }
+      onDone && onDone();
+    }
+  }));
+  return {failed, code};
 }
 
 /* ---------- toast ---------- */
@@ -549,6 +559,7 @@ function renderGroups(){
     <div class="card2">
       <h3>${esc(g.name)}</h3>
       <div class="members">${g.members.map(u => `<span class="member">${avatarHTML(g.memberNames?.[u] || "?", null, true)}${esc(u === me.uid ? "Jij" : (g.memberNames?.[u] || "Lid"))}</span>`).join("")}</div>
+      <p>${groupSwipes.get(g.id)?.size || 0} films samen geswipet · ${matchesFor(g).length} matches</p>
       <p>Laat iemand meedoen met deze code of stuur de link:</p>
       <div class="code">${esc(g.inviteCode)}</div>
       <div class="row-btns" style="margin:0">
@@ -586,15 +597,12 @@ $("#glist").addEventListener("click", async e => {
     } catch { /* cancelled */ }
   } else if (b.dataset.import){
     const gid = b.dataset.import, entries = Object.entries(oldImport || {}).filter(([id]) => byId.has(id));
-    b.disabled = true; b.textContent = "Bezig…";
-    try {
-      for (let i = 0; i < entries.length; i += 400){
-        const batch = writeBatch(db);
-        entries.slice(i, i + 400).forEach(([id, [v, t]]) => batch.set(doc(db, "groups", gid, "swipes", id), {v, t: t || Date.now(), by: me.uid}));
-        await batch.commit();
-      }
-      toast(`${entries.length} swipes overgenomen`); b.remove();
-    } catch (err) { console.error(err); b.disabled = false; b.textContent = "Overnemen lukte niet, probeer opnieuw"; }
+    b.disabled = true; b.textContent = `Bezig… 0/${entries.length}`;
+    let done = 0;
+    const res = await writeMany(entries.map(([id, [v, t]]) => () => setDoc(doc(db, "groups", gid, "swipes", id), {v, t: t || Date.now(), by: me.uid})),
+      () => { done++; b.textContent = `Bezig… ${done}/${entries.length}`; });
+    if (!res.failed){ toast(`${entries.length} swipes overgenomen. Kies bovenin de groep om ze te zien.`); b.remove(); }
+    else { b.disabled = false; b.textContent = `${res.failed} niet gelukt (${res.code}). Tik om opnieuw te proberen`; }
   } else if (b.dataset.use){
     setMode(b.dataset.use); $("#gpanel").hidden = true;
   } else if (b.dataset.leave || b.dataset.del){
