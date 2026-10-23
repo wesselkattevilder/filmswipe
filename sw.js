@@ -1,5 +1,5 @@
 // Filmswipe service worker: app shell offline, posters cached, catalog always fresh when online.
-const SHELL = "fs-shell-v3", IMGS = "fs-img-v1";
+const SHELL = "fs-shell-v4", IMGS = "fs-img-v1";
 const FILES = ["./", "index.html", "style.css", "app.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {

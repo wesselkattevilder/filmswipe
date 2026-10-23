@@ -39,7 +39,7 @@ let groupVotes = new Map();       // gid -> Map(filmId -> {uid: v})
 let mode = store.get("fs-mode") || "me";
 let filter = new Set(Object.keys(PLAT));
 try { const s = JSON.parse(store.get("fs-filter")); if (Array.isArray(s) && s.length) filter = new Set(s.filter(p => PLAT[p])); } catch {}
-let busy = false, pendingRender = false, pinTop = null, listTab = "watch";
+let busy = false, pendingRender = false, pinTop = null, listTab = mode === "me" ? "watch" : "match";
 let unsubs = [], groupUnsubs = new Map();
 
 const curGroup = () => mode === "me" ? null : groups.find(g => g.id === mode) || null;
