@@ -538,7 +538,7 @@ function renderList(){
       </div>
     </div>`; }).join("")
     : `<div class="list-empty">${esc(emptyText)}</div>`;
-  $("#sync").textContent = catalogMeta ? `Filmlijst van ${new Date(catalogMeta.updated).toLocaleDateString("nl-NL", {day:"numeric", month:"long"})} · ${films.length} films · data en posters: TMDB` : "";
+  $("#sync").textContent = "Versie 5 · " + (catalogMeta ? `Filmlijst van ${new Date(catalogMeta.updated).toLocaleDateString("nl-NL", {day:"numeric", month:"long"})} · ${films.length} films · data en posters: TMDB` : "");
 }
 $("#list").addEventListener("click", e => {
   const b = e.target.closest(".mini"); if (!b) return;
