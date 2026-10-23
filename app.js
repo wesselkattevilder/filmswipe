@@ -497,7 +497,7 @@ function renderList(){
   const counts = {like:0, seen:0, nope:0, watch:0, match: g ? matchesFor(g).length : 0};
   sw.forEach(s => { if (counts[s.v] !== undefined) counts[s.v]++; });
   const COL = {match:"var(--like)", watch:"var(--gold)", like:"var(--like)", seen:"var(--seen)", nope:"var(--nope)"};
-  $("#tabs").innerHTML = tabs.map(t => `<button class="tab" role="tab" type="button" data-v="${t}" style="--c:${COL[t]}" aria-selected="${t === listTab}">${t === "match" ? "Match" : LABEL[t]}<small>${counts[t]}</small></button>`).join("");
+  $("#tabs").innerHTML = tabs.map(t => `<button class="tab" role="tab" type="button" data-v="${t}" style="--c:${COL[t]}" aria-selected="${t === listTab}"><span>${t === "match" ? "Matches" : LABEL[t]}</span><small>${counts[t]}</small></button>`).join("");
   let items = [];
   if (listTab === "match"){
     items = matchesFor(g).map(({id, vs}) => ({f: byId.get(id), vs, t: 0}))
