@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isMember(gid) {
+      return signedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(gid)).data.members;
+    }
+
+    // Each person: profile + own swipes, only for themselves
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+      match /swipes/{filmId} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // Groups ("samen"): members manage everything; outsiders can only add themselves with the right code
+    match /groups/{gid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.members;
+      allow create: if signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.members == [request.auth.uid];
+      allow update: if signedIn() && (
+        request.auth.uid in resource.data.members
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberNames', 'joinCode'])
+          && request.resource.data.members == resource.data.members.concat([request.auth.uid])
+          && request.resource.data.joinCode == resource.data.inviteCode
+        )
+      );
+      allow delete: if signedIn() && resource.data.owner == request.auth.uid;
+
+      // swiping together on one phone
+      match /swipes/{filmId} {
+        allow read, write: if isMember(gid);
+      }
+      // each member's own verdicts, used for matches; you can only change your own field
+      match /votes/{filmId} {
+        allow read: if isMember(gid);
+        allow create: if isMember(gid) && request.resource.data.keys().hasOnly([request.auth.uid]);
+        allow update: if isMember(gid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([request.auth.uid]);
+        allow delete: if isMember(gid);
+      }
+    }
+
+    // invite codes: readable one at a time by anyone signed in who knows the code
+    match /invites/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && isMember(request.resource.data.gid);
+      allow delete: if signedIn() && isMember(resource.data.gid);
+    }
+  }
+}

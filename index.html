@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Filmswipe</title>
+<meta name="description" content="Samen films kiezen van Netflix, Videoland en Prime Video">
+<meta name="theme-color" content="#0f0d12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Filmswipe">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Onest:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- login -->
+<section class="login" id="login" hidden>
+  <div class="fan" id="fan" aria-hidden="true"><div></div><div></div><div></div></div>
+  <h1>Film<span>swipe</span></h1>
+  <p>Swipe door wat er nu op Netflix, Videoland en Prime Video staat. Samen swipen geeft matches.</p>
+  <button class="gbtn" id="gLogin" type="button">
+    <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.7Z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6h-4a12 12 0 0 0 0 10.8l4-3.1Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9Z"/></svg>
+    Inloggen met Google
+  </button>
+  <div class="err" id="loginErr" hidden></div>
+  <div class="install" id="installHint"></div>
+</section>
+
+<!-- app -->
+<div class="app" id="app" hidden>
+  <header>
+    <div class="brand"><i aria-hidden="true"></i>Filmswipe</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="prof-wrap">
+        <button class="iconbtn prof-btn" id="modeBtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="avatar" id="modeAvatar"></span><span id="modeName">Ik</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="prof-menu" id="modeMenu" hidden>
+          <div class="mode-sec">Swipen als</div>
+          <div class="prof-list" id="modeList"></div>
+          <div style="border-top:1px solid var(--line);padding-top:6px">
+            <button class="menu-link" id="openGroups" type="button">Samen-groepen beheren</button>
+            <button class="menu-link" id="logout" type="button">Uitloggen</button>
+          </div>
+        </div>
+      </div>
+      <button class="iconbtn" id="openList" type="button" aria-label="Lijsten">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Lijst</span>
+      </button>
+    </div>
+  </header>
+  <div class="row2">
+    <div class="chips" id="chips" role="group" aria-label="Platforms"></div>
+    <div class="tally" id="tally"></div>
+  </div>
+  <div class="stage" id="stage" aria-live="polite"></div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div class="actions">
+      <button class="act small" id="bUndo" type="button" aria-label="Laatste swipe terugdraaien" title="Terug (Z)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      </button>
+      <div class="act-wrap"><button class="act big" id="bNope" type="button" style="--c:var(--nope)" aria-label="Niet leuk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>Nee</div>
+      <div class="act-wrap"><button class="act mid" id="bSeen" type="button" style="--c:var(--seen)" aria-label="Al gezien">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>Gezien</div>
+      <div class="act-wrap"><button class="act big" id="bLike" type="button" style="--c:var(--like)" aria-label="Leuk">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.4 2.5h1.8c.8-1.4 2.3-2.5 4.4-2.5 3.7 0 5.8 3.7 4.3 7.2C19.5 16.4 12 21 12 21Z"/></svg>
+      </button>Leuk</div>
+      <div class="act-wrap"><button class="act mid" id="bWatch" type="button" style="--c:var(--gold)" aria-label="Nu kijken">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5Z"/></svg>
+      </button>Nu kijken</div>
+    </div>
+    <div class="hint" id="hint">← nee · ↑ gezien · → leuk · ↓ nu kijken · Z terug</div>
+  </div>
+</div>
+
+<!-- lists -->
+<div class="panel" id="panel" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+    <div class="sheet-head"><h2 id="panelTitle">Lijst</h2><button class="iconbtn" id="closeList" type="button">Sluiten</button></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="list" id="list"></div>
+    <div class="sync" id="sync"></div>
+  </div>
+</div>
+
+<!-- groups -->
+<div class="panel gpanel" id="gpanel" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+    <div class="sheet-head"><h2 id="gTitle">Samen</h2><button class="iconbtn" id="closeGroups" type="button">Sluiten</button></div>
+    <div class="list" id="glist"></div>
+  </div>
+</div>
+
+<!-- detail -->
+<div class="detail" id="detail" hidden>
+  <div class="dsheet" id="dSheet" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="dhead"><div class="dposter" id="dPoster"></div><div><div class="meta" id="dMeta"></div><h2 id="dTitle"></h2></div></div>
+    <div class="top" id="dPlat" style="position:static"></div>
+    <p class="dbody" id="dBody"></p>
+    <div class="dacts">
+      <button type="button" data-v="nope" style="--c:var(--nope)">Nee</button>
+      <button type="button" data-v="seen" style="--c:var(--seen)">Gezien</button>
+      <button type="button" data-v="like" style="--c:var(--like)">Leuk</button>
+      <button type="button" data-v="watch" style="--c:var(--gold)">Nu kijken</button>
+    </div>
+    <div class="dacts"><button type="button" class="close" id="dClose">Terug naar swipen</button></div>
+    <div class="hint" style="margin-top:-4px">Of veeg naar beneden om te sluiten</div>
+  </div>
+</div>
+
+<!-- match -->
+<div class="match" id="match" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <h2 id="mTitle">Match!</h2>
+  <div class="mposter" id="mPoster"></div>
+  <p id="mText"></p>
+  <div class="row-btns">
+    <button class="btn" id="mWatch" type="button" style="background:var(--gold);color:#1b1408">Nu kijken</button>
+    <button class="btn ghost" id="mClose" type="button">Verder swipen</button>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
